@@ -33,6 +33,10 @@ Usage: $0
                                         default is warn; acceptable levels are <panic, fatal, error, warn, info, debug>
     [--log-dir <directory>]             save logs to provided directory
                                         default is /tmp
+    [--result-dir <directory>]          save results to provided directory
+                                        default is /tmp/results
+    [--result-file <filename>]          save results to provided file
+                                        default is result.csv
 
     ***docker arguments***
     [--pull]                            get latest docker image
@@ -106,6 +110,14 @@ do
         LOG_DIR="$2"
         shift 2
         ;;
+    --result-dir)
+        RESULT_DIR="$2"
+        shift 2
+        ;;
+    --result-file)
+        RESULT_FILE_NAME="$2"
+        shift 2
+        ;;
     *)  # unknown option
         print_help
         exit 1
@@ -166,6 +178,18 @@ fi
 
 if [ -n "$LOG_DIR" ]; then
     TV_RUN_OPTIONS="$TV_RUN_OPTIONS --log-dir $LOG_DIR"
+fi
+
+if [ -n "$RESULT_DIR" ]; then
+    DOCKER_RESULT_SETUP=/tmp/result
+    RESULT_DIR_ABS=$(cd $RESULT_DIR; pwd)
+    RESULT_DIR_MOUNT=$DOCKER_RESULT_SETUP/$(basename $RESULT_DIR)
+    DOCKER_RUN_OPTIONS="$DOCKER_RUN_OPTIONS --mount type=bind,source=$RESULT_DIR_ABS,target=$RESULT_DIR_MOUNT"
+    TV_RUN_OPTIONS="$TV_RUN_OPTIONS --result-dir $RESULT_DIR_MOUNT"
+fi
+
+if [ -n "$RESULT_FILE_NAME" ]; then
+    TV_RUN_OPTIONS="$TV_RUN_OPTIONS --result-file $RESULT_FILE_NAME"
 fi
 
 CMD="docker run $DOCKER_RUN_OPTIONS $ENTRY_POINT -ti $IMAGE_NAME"

@@ -21,12 +21,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stratum/testvectors-runner/pkg/logger"
 	"github.com/stratum/testvectors-runner/pkg/orchestrator/testvector"
+	"github.com/stratum/testvectors-runner/pkg/test/result"
 	"github.com/stratum/testvectors-runner/pkg/test/setup"
 	"github.com/stratum/testvectors-runner/pkg/test/teardown"
 	tv "github.com/stratum/testvectors/proto/testvector"
 )
 
 var log = logger.NewLogger()
+
+//TestVectorResults stores the list of results
+var TestVectorResults = []*result.TestVectorResult{}
 
 //TVSuite struct stores a list of testvector file names, list of template file names and template config file
 type TVSuite struct {
@@ -60,19 +64,28 @@ func getInternalTest(tvFile string, tv *tv.TestVector) testing.InternalTest {
 	return testing.InternalTest{
 		Name: strings.Replace(filepath.Base(tvFile), ".pb.txt", "", 1),
 		F: func(t *testing.T) {
+			testName := strings.Replace(filepath.Base(tvFile), ".pb.txt", "", 1)
+			tr := result.NewTestVectorResult(testName)
+			testResult := true
 			setup.Test()
 			// Process test cases and add them to the test
 			for _, tc := range tv.GetTestCases() {
 				t.Run(tc.TestCaseId, func(t *testing.T) {
+					tcResult := result.NewTestCaseResult(testName + "/" + tc.TestCaseId)
 					setup.TestCase()
 					result := testvector.ProcessTestCase(tc)
 					teardown.TestCase()
+					tcResult.Result = result
+					testResult = testResult && result
+					tr.TestCaseResults = append(tr.TestCaseResults, tcResult)
 					if !result {
 						t.Fail()
 					}
 				})
 			}
 			teardown.Test()
+			tr.Result = testResult
+			TestVectorResults = append(TestVectorResults, tr)
 		},
 	}
 }

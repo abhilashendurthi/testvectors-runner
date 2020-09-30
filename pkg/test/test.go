@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stratum/testvectors-runner/pkg/logger"
+	"github.com/stratum/testvectors-runner/pkg/test/result"
 	"github.com/stratum/testvectors-runner/pkg/test/setup"
 	"github.com/stratum/testvectors-runner/pkg/test/teardown"
 	"github.com/stratum/testvectors-runner/pkg/test/testsuite"
@@ -132,6 +133,8 @@ func Run(tgFile string, dpMode string, matchType string, pmFile string, testSuit
 	setup.Suite(target, dpMode, matchType, portmap)
 	var match Deps
 	code := testing.MainStart(match, testSuite, nil, nil).Run()
+	result.PrintStats(tvsuite.TestVectorResults)
+	result.WriteResults(tvsuite.TestVectorResults)
 	teardown.Suite()
 	os.Exit(code)
 }

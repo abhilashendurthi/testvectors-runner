@@ -13,6 +13,7 @@ import (
 
 	"github.com/stratum/testvectors-runner/pkg/logger"
 	"github.com/stratum/testvectors-runner/pkg/test"
+	"github.com/stratum/testvectors-runner/pkg/test/result"
 )
 
 var log = logger.NewLogger()
@@ -32,6 +33,8 @@ func main() {
 	logDir := flag.String("log-dir", "/tmp", "Location to store logs")
 	logLevel := flag.String("log-level", "warn", "Log Level")
 	templateConfig := flag.String("template-config", "", "Path to template config file")
+	resultDir := flag.String("result-dir", "/tmp/results", "Location to store results")
+	resultFile := flag.String("result-file", "result", "Name of the result file")
 
 	help := flag.Bool("help", false, "Help")
 	h := flag.Bool("h", false, "Help")
@@ -51,6 +54,8 @@ func main() {
 	}
 
 	setupLog(*logDir, *logLevel)
+	result.SetResultFolder(*resultDir)
+	result.SetResultFileName(*resultFile)
 	testSuiteSlice := test.CreateSuite(*testNames, *tvDir, *tvName, *templateConfig)
 	test.Run(*tgFile, *dpMode, *matchType, *pmFile, testSuiteSlice)
 }
@@ -78,6 +83,10 @@ func usage() {
 											default is warn; acceptable levels are <panic, fatal, error, warn, info, debug>
 	[--log-dir <directory>]             	save logs to provided directory
 											default is /tmp
+	[--result-dir <directory>]          	save results to provided directory
+											default is /tmp/results
+	[--result-file <filename>]          	save results to provided file
+											default is result.csv
 `
 	fmt.Println(usage)
 }

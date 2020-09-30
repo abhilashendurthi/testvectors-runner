@@ -20,3 +20,4 @@ tvrunner
 
 #Logs
 *.log
+*.csv
