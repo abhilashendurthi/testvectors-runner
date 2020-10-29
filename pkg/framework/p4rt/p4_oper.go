@@ -82,6 +82,16 @@ func ProcessP4WriteRequest(wreq *v1.WriteRequest, wres *v1.WriteResponse) bool {
 	return false
 }
 
+//ProcessP4ReadRequest sends the write request to switch
+func ProcessP4ReadRequest(req *v1.ReadRequest, respList []*v1.ReadResponse) bool {
+	if req == nil {
+		return false
+	}
+	readCl := p4rtConn.Read(req)
+	go readCl.Recv()
+	return verifyReadRespList(respList, readCl.responseChan)
+}
+
 //ProcessP4PipelineConfigOperation sends SetForwardingPipelineConfigRequest to switch
 func ProcessP4PipelineConfigOperation(req *v1.SetForwardingPipelineConfigRequest, res *v1.SetForwardingPipelineConfigResponse) bool {
 	if req == nil {
@@ -92,6 +102,15 @@ func ProcessP4PipelineConfigOperation(req *v1.SetForwardingPipelineConfigRequest
 		return verifySetForwardingPipelineConfigResp(res, resp)
 	}
 	return false
+}
+
+//ProcessP4GetPipelineConfigOperation sends SetForwardingPipelineConfigRequest to switch
+func ProcessP4GetPipelineConfigOperation(req *v1.GetForwardingPipelineConfigRequest, res *v1.GetForwardingPipelineConfigResponse) bool {
+	if req == nil {
+		return false
+	}
+	resp := p4rtConn.GetForwardingPipelineConfig(req)
+	return verifyGetForwardingPipelineConfigResp(res, resp)
 }
 
 //ProcessPacketIn verifies if the packet received is same as expected packet.

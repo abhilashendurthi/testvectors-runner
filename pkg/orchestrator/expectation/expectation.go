@@ -56,13 +56,13 @@ func processControlPlaneExpectation(cpe *tv.ControlPlaneExpectation) bool {
 	switch {
 	case cpe.GetReadExpectation() != nil:
 		log.Debug("In Get Read Expectation")
-		//TODO
+		return p4rt.ProcessP4ReadRequest(cpe.GetReadExpectation().P4ReadRequest, cpe.GetReadExpectation().GetP4ReadResponses())
 	case cpe.GetPacketInExpectation() != nil:
 		log.Debug("In Get Packet In Expectation")
 		return p4rt.ProcessPacketIn(cpe.GetPacketInExpectation().GetP4PacketIn())
 	case cpe.GetPipelineConfigExpectation() != nil:
 		log.Debug("In Get Pipeline Config Expectation")
-		//TODO
+		return p4rt.ProcessP4GetPipelineConfigOperation(cpe.GetPipelineConfigExpectation().GetP4GetPipelineConfigRequest(), cpe.GetPipelineConfigExpectation().GetP4GetPipelineConfigResponse())
 	}
 	return false
 }

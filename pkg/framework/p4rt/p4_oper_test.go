@@ -35,10 +35,10 @@ func tearDownTest() {
 	p4rt.TearDown()
 }
 
-func TestProcessP4PipelineConfigOperation(t *testing.T) {
+func TestProcessSetP4PipelineConfigOperation(t *testing.T) {
 	log.Info(strings.Repeat("*", 100))
-	log.Info("Start of TestProcessP4PipelineConfigOperation")
-	defer log.Info("End of TestProcessP4PipelineConfigOperation")
+	log.Info("Start of TestProcessSetP4PipelineConfigOperation")
+	defer log.Info("End of TestProcessSetP4PipelineConfigOperation")
 	setupTest()
 	defer tearDownTest()
 	var (
@@ -761,19 +761,26 @@ func TestProcessPacketIOOperation(t *testing.T) {
 	}
 }
 
-/*func TestMasterArbitration(t *testing.T) {
+func TestProcessGetP4PipelineConfigOperation(t *testing.T) {
+	log.SetLogLevel("debug")
 	log.Info(strings.Repeat("*", 100))
-	log.Info("Start of TestMasterArbitration")
+	log.Info("Start of TestProcessSetP4PipelineConfigOperation")
+	defer log.Info("End of TestProcessSetP4PipelineConfigOperation")
 	setupTest()
+	defer tearDownTest()
 	var (
-		invalidDeviceID uint64 = 2
-		highElectionID         = &v1.Uint128{High: 2, Low: 5}
-		scv                    = p4rt.GetStreamChannel(p4rt.P4rtClient)
+		getPipelineCfgReq  = &v1.GetForwardingPipelineConfigRequest{DeviceId: 1, ResponseType: 1}
+		getPipelineCfgResp = &v1.GetForwardingPipelineConfigResponse{
+			Config: &v1.ForwardingPipelineConfig{
+				Cookie: &v1.ForwardingPipelineConfig_Cookie{},
+			},
+		}
 	)
+
 	type args struct {
-		scv        p4rt.StreamChannelVar
-		deviceID   uint64
-		electionID *v1.Uint128
+		target *tg.Target
+		req    *v1.GetForwardingPipelineConfigRequest
+		res    *v1.GetForwardingPipelineConfigResponse
 	}
 	tests := []struct {
 		name string
@@ -781,45 +788,25 @@ func TestProcessPacketIOOperation(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Valid master arbitration",
+			name: "Empty Pipeline Config",
 			args: args{
-				scv:        scv,
-				deviceID:   deviceID,
-				electionID: electionID,
+				target: TestTarget,
+				req:    getPipelineCfgReq,
+				res:    getPipelineCfgResp,
 			},
 			want: true,
-		},
-		{
-			name: "Higher election",
-			args: args{
-				scv:        scv,
-				deviceID:   deviceID,
-				electionID: highElectionID,
-			},
-			want: true,
-		},
-		{
-			name: "Invalid device ID",
-			args: args{
-				scv:        scv,
-				deviceID:   invalidDeviceID,
-				electionID: electionID,
-			},
-			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := p4rt.GetMasterArbitrationLock(tt.args.scv, tt.args.deviceID, tt.args.electionID); got != tt.want {
-				t.Errorf("GetMasterArbitrationLock() = %v, want %v", got, tt.want)
+			if got := p4rt.ProcessP4GetPipelineConfigOperation(tt.args.req, tt.args.res); got != tt.want {
+				t.Errorf("ProcessP4GetPipelineConfigOperation() = %v, want %v", got, tt.want)
 			}
 		})
 	}
-	tearDownTest()
-	log.Info("End of TestMasterArbitration")
 }
 
-func TestLowElectionMasterArbitration(t *testing.T) {
+/*func TestLowElectionMasterArbitration(t *testing.T) {
 	log.Info(strings.Repeat("*", 100))
 	log.Info("Start of TestLowElectionMasterArbitration")
 	setupTest()

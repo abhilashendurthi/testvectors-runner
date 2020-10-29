@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	v1 "github.com/p4lang/p4runtime/go/p4/v1"
@@ -64,6 +65,19 @@ func (c connection) Write(writeReq *v1.WriteRequest) *v1.WriteResponse {
 	return resp
 }
 
+//Read calls P4RuntimeClient's Read and returns ??
+func (c connection) Read(readReq *v1.ReadRequest) readChan {
+	log.Info("Sending P4 read request")
+	log.Debugf("Read request: %s", readReq)
+	ctx := context.Background()
+	readClient, err := c.client.Read(ctx, readReq)
+	if err != nil {
+		log.Errorf("Error sending P4 read request:%v", err)
+		return readChan{}
+	}
+	return readChan{client: readClient, responseChan: make(chan *v1.ReadResponse)}
+}
+
 //SetForwardingPipelineConfig calls P4RuntimeClient's SetForwardingPipelineConfig and returns SetForwardingPipelineConfigResponse
 func (c connection) SetForwardingPipelineConfig(pipelineCfg *v1.SetForwardingPipelineConfigRequest) *v1.SetForwardingPipelineConfigResponse {
 	log.Info("Sending P4 pipeline config")
@@ -76,6 +90,21 @@ func (c connection) SetForwardingPipelineConfig(pipelineCfg *v1.SetForwardingPip
 	}
 	log.Info("Received P4 pipeline config response")
 	log.Debugf("P4 set pipeline config response:%s\n", resp)
+	return resp
+}
+
+//GetForwardingPipelineConfig calls P4RuntimeClient's GetForwardingPipelineConfig and returns GetForwardingPipelineConfigResponse
+func (c connection) GetForwardingPipelineConfig(pipelineCfg *v1.GetForwardingPipelineConfigRequest) *v1.GetForwardingPipelineConfigResponse {
+	log.Info("Getting P4 pipeline config")
+	log.Debugf("Get Pipeline config: %s", pipelineCfg)
+	ctx := context.Background()
+	resp, err := c.client.GetForwardingPipelineConfig(ctx, pipelineCfg)
+	if err != nil {
+		log.Errorf("Error getting P4 pipeline config:%v", err)
+		return nil
+	}
+	log.Info("Received get P4 pipeline config response")
+	log.Debugf("P4 get pipeline config response:%s\n", resp)
 	return resp
 }
 
@@ -103,6 +132,45 @@ func verifyWriteResp(expected, actual *v1.WriteResponse) bool {
 	}
 }
 
+func verifyReadRespList(expResp []*v1.ReadResponse, actRespChan chan *v1.ReadResponse) bool {
+	result := true
+	for _, exp := range expResp {
+		select {
+		case act := <-actRespChan:
+			log.Debug("In verifyReadRespList Case read response channel")
+			result = result && verifyReadResp(exp, act)
+		case <-time.After(PktTimeout):
+			log.Error("Timed out waiting for read response")
+			return false
+		}
+	}
+	return result
+}
+
+//verifyReadResp compares two ReadResponses and returns true or false
+func verifyReadResp(expected, actual *v1.ReadResponse) bool {
+	//FIXME
+	//initializing "expected" to empty read response to avoid nil pointer exception when tv doesn't have response
+	if expected == nil {
+		expected = &v1.ReadResponse{}
+	}
+	switch {
+	case expected == nil && actual == nil:
+		log.Debug("Both read responses are empty")
+		return true
+	case expected == nil || actual == nil:
+		log.Warnf("Read responses are unequal\nExpected: %s\nActual  : %s\n", expected, actual)
+		return false
+	case proto.Equal(expected, actual):
+		log.Info("Read responses are equal")
+		log.Debugf("Read response: %s\n", actual)
+		return true
+	default:
+		log.Warnf("Read responses are unequal\nExpected: %s\nActual  : %s\n", expected, actual)
+		return false
+	}
+}
+
 //verifySetForwardingPipelineConfigResp compares two SetForwardingPipelineConfigResponse and returns true or false
 func verifySetForwardingPipelineConfigResp(expected, actual *v1.SetForwardingPipelineConfigResponse) bool {
 	//FIXME
@@ -124,6 +192,31 @@ func verifySetForwardingPipelineConfigResp(expected, actual *v1.SetForwardingPip
 		return true
 	default:
 		log.Warnf("SetForwardingPipelineConfig responses are unequal\nExpected: %s\nActual  : %s\n", expected, actual)
+		return false
+	}
+}
+
+//verifyGetForwardingPipelineConfigResp compares two GetForwardingPipelineConfigResponse and returns true or false
+func verifyGetForwardingPipelineConfigResp(expected, actual *v1.GetForwardingPipelineConfigResponse) bool {
+	//FIXME
+	//initializing expected to empty response to avoid nil pointer exception when tv doesn't have response
+	if expected == nil {
+		expected = &v1.GetForwardingPipelineConfigResponse{}
+	}
+
+	switch {
+	case expected == nil && actual == nil:
+		log.Debug("Both GetForwardingPipelineConfig responses are empty")
+		return true
+	case expected == nil || actual == nil:
+		log.Warnf("GetForwardingPipelineConfig responses are unequal\nExpected: %s\nActual  : %s\n", expected, actual)
+		return false
+	case proto.Equal(expected, actual):
+		log.Info("GetForwardingPipelineConfig responses are equal")
+		log.Debugf("GetForwardingPipelineConfig response: %s\n", actual)
+		return true
+	default:
+		log.Warnf("GetForwardingPipelineConfig responses are unequal\nExpected: %s\nActual  : %s\n", expected, actual)
 		return false
 	}
 }
