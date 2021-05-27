@@ -126,7 +126,8 @@ func convertToPktOut(port uint32, pkt []byte) *v1.PacketOut {
 		{MetadataId: 1, Value: common.GetByteSlice(port, 2)},
 		{MetadataId: 2, Value: common.GetByteSlice(2, 1)},
 		{MetadataId: 3, Value: common.GetByteSlice(0, 1)},
-		{MetadataId: 4, Value: common.GetByteSlice(48897, 2)},
+		{MetadataId: 4, Value: common.GetByteSlice(0, 1)},
+		{MetadataId: 5, Value: common.GetByteSlice(48897, 2)},
 	}
 	log.Debugf("Packet info: %s", po)
 	return po
